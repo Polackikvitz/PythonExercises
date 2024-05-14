@@ -69,6 +69,4 @@ def ask_question():
     print(correct)
 
 
-#ask_question()
-
 ask_question()
