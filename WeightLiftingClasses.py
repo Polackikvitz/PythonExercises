@@ -10,14 +10,14 @@ class Weightlifter:
         self.age = age
         self.name = name
 
-    def exercise_days(self, intensity_level):
-        if intensity_level < 0 or intensity_level > 100:
+    def exercise_days(self):
+        if self.intensity_level < 0 or self.intensity_level > 100:
             raise ValueError('intensity level must be between 0 and 100')
-        elif intensity_level > 0 and intensity_level <= 20:
+        elif self.intensity_level > 0 and self.intensity_level <= 20:
             self.rest_days = 3
-        elif intensity_level < 50 and intensity_level > 20:
+        elif self.intensity_level < 50 and self.intensity_level > 20:
             self.rest_days = 2
-        elif intensity_level >= 50 and intensity_level <= 100:
+        elif self.intensity_level >= 50 and self.intensity_level <= 100:
             self.rest_days = 1
 
         number_of_exercises = 7 - self.rest_days
@@ -26,8 +26,11 @@ class Weightlifter:
     def get_exercises(self, exercises):  #exercises = instance of class Exercises
         exercise_dict = {}
         muscle_group_keys = exercises.get_muscle_groups()
+        number_of_exercises = self.exercise_days()
 
-        for day, muscle_group in enumerate(muscle_group_keys):
+        # TODO: POP USED EXERCISES
+        for day in range(number_of_exercises):
+            muscle_group = random.choice(muscle_group_keys)
             exercise = []
             muscle_group_exercises = exercises.muscle_group_exercises.get(muscle_group, [])
 
