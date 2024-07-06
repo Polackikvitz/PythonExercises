@@ -1,1 +1,1 @@
-Exercises from Deitel
+Exercises
