@@ -1,9 +1,10 @@
 class BattleshipGame:
-    def __init__(self, size=10):
+    def __init__(self, size=10, players=2):
         self.size = size
         self.grid = [[' ' for _ in range(size)] for _ in range(size)]
         self.ships = {}
         self.battlefield = [[' ' for _ in range(size)] for _ in range(size)]
+        self.players = players
 
         self.ship_types = {
             1: {'class': 'Carrier', 'size': 5, 'coord': []},
@@ -12,6 +13,25 @@ class BattleshipGame:
             4: {'class': 'Submarine', 'size': 3, 'coord': []},
             5: {'class': 'Patrol Boat', 'size': 2, 'coord': []}
         }
+
+    def print_ships_info(self):
+        ships_info = [
+            {"No.": 1, "Class of ship": "Carrier", "Size": 5},
+            {"No.": 2, "Class of ship": "Battleship", "Size": 4},
+            {"No.": 3, "Class of ship": "Destroyer", "Size": 3},
+            {"No.": 4, "Class of ship": "Submarine", "Size": 3},
+            {"No.": 5, "Class of ship": "Patrol Boat", "Size": 2},
+        ]
+
+        # Print the header
+        header = f"{'No.':<5} {'Class of ship':<20} {'Size':<5}"
+        print(header)
+        print("=" * len(header))
+
+        # Print each ship's information
+        for ship in ships_info:
+            print(f"{ship['No.']:<5} {ship['Class of ship']:<20} {ship['Size']:<5}")
+        print()
 
     def print_grid(self):
         """Prints the grid with the headers and the grid cells
@@ -63,14 +83,23 @@ class BattleshipGame:
         print('+')
 
     def add_ship(self, name, coordinates):
+        if self.players == 2:
+            if not self.validate_ship_placement(coordinates):
+                return False
 
-        if not self.validate_ship_placement(coordinates):
-            return False
+            self.ships[name] = coordinates
+            for (x, y) in coordinates: #Unpacks tuple
+                self.grid[x][y] = name[0].upper()  #assigns tuple values into grid indices
+            return True
 
-        self.ships[name] = coordinates
-        for (x, y) in coordinates: #Unpacks tuple
-            self.grid[x][y] = name[0].upper()  #assigns tuple values into grid indices
-        return True
+        elif self.players == 1:
+            if not self.bot_ship(coordinates):
+                return False
+
+            self.ships[name] = coordinates
+            for (x, y) in coordinates:
+                self.grid[x][y] = name[0].upper()
+            return True
 
     def validate_ship_placement(self, coordinates):
         """Validates if ship coordinates are contiguous and within the grid"""
@@ -106,6 +135,7 @@ class BattleshipGame:
                 return False
 
         return True
+
 
     def get_user_input(self):
         """Gets user input for ship placement"""
@@ -144,7 +174,7 @@ class BattleshipGame:
 
     def check_hit(self):
         """Checks if missile hit or miss"""
-        ships_total = 5
+        ships_total = 17
         missile_hit = 0
         missiles_shot = 0
         while missile_hit < ships_total:
@@ -177,6 +207,9 @@ class BattleshipGame:
             elif self.grid[x][y] == 'X':
                 print('Coordinate already used. It was a miss.')
                 continue
+            elif self.grid[x][y] == '☠':
+                print('Coordinate already used. It was a hit.')
+                continue
 
             # Check if missile hit or miss via iterating through ship coordinates
             for ship_id, ship_info in self.ship_types.items():
@@ -186,7 +219,7 @@ class BattleshipGame:
                         self.battlefield[x][y] = '☠'
                         self.grid[x][y] = '☠'
                         self.battlefield_grid()
-                        print(f'Ship {ship_info["class"]} has been hit! ')
+                        print(f'Ship {ship_info["class"]}, size: {ship_info["size"]}, has been hit! ')
 
                         ship_info['coord'].remove(coord)
                         if len(ship_info['coord']) == 0:
@@ -194,31 +227,100 @@ class BattleshipGame:
 
                         break
 
-                    elif self.grid[x][y] == '☠':
-                        print('Coordinates were a already a hit!')
-                        break
-
         print('All ships have been destroyed. Mission complete.')
         return missiles_shot
 
+    def random_ships(self):
+        """Randomly places ships on the grid"""
+        from random import randint, choice
+        for ship_no, ship_info in self.ship_types.items():
+            name = ship_info['class']
+            length = ship_info['size']
+            dict_coordinates = ship_info['coord']
+            while True:
+                orientation = choice(['horizontal', 'vertical'])
+                if orientation == 'horizontal':
+                    x = randint(0, self.size - 1)
+                    y = randint(0, self.size - length)
+                    coordinates = [(x, y + i) for i in range(length)]
+                else:
+                    x = randint(0, self.size - length)
+                    y = randint(0, self.size - 1)
+                    coordinates = [(x + i, y) for i in range(length)]
+
+                if self.add_ship(name, coordinates):
+                    for coordinate in coordinates:
+                        dict_coordinates.append(coordinate)
+                    break
+
+    def bot_ship(self, coordinates):
+        """Validates if ship coordinates are contiguous and within the grid"""
+        # Extract x and y coordinates
+        x_coords, y_coords = zip(*coordinates)
+        x_set = set(x_coords)
+        y_set = set(y_coords)
+
+        # Check if all x coordinates or y coordinates are the same (forming a line)
+        if len(x_set) == 1:  # All x coordinates are the same
+            y_range = range(min(y_coords), max(y_coords) + 1)
+            # Check if y coordinates are contiguous; set() removes duplicates; and checks if the set of y coordinates is equal to the range of y coordinates
+            if not set(y_coords) == set(y_range):
+                return False
+
+        elif len(y_set) == 1:  # All y coordinates are the same
+            x_range = range(min(x_coords), max(x_coords) + 1)
+            if not set(x_coords) == set(x_range):
+                return False
+        else:
+            return False
+
+        # Check if coordinates are within the grid
+        for (x, y) in coordinates:
+            if not (0 <= x < self.size and 0 <= y < self.size):
+                return False
+            if self.grid[x][y] != ' ':
+                return False
+
+        return True
 
 
 
 
 
-print('This is a two player battleship game. Player 1 inputs the location of the ships, and player 2 gueses the location of the ships.\n'
-      'Then player 2 inputs their battleships and player 1 guesses. The player with the least amount of missiles used wins! \n')
-game1 = BattleshipGame(10)
-game1.print_grid()
-game1.get_user_input()
-player2_score = game1.check_hit()
-print(f'Player 2 Missiles Used: {player2_score}\n')
-game2 = BattleshipGame(10)
-game2.print_grid()
-game2.get_user_input()
-player1_score = game2.check_hit()
+print('This is either a single player or double player battleship game. If you are playing solo, the computer will randomly place the ships for you to guess.\n')
+print('If you are playing with two players, Player 1 will input the location of the ships, and Player 2 will guess the location of the ships.\n'
+      'Then Player 2 will input their battleships and Player 1 will guess. The player with the least amount of missiles used wins! \n')
 
-if player1_score < player2_score:
-    print(f'Player 1 wins with only {player1_score} missiles used vs. Player 2 using {player2_score} missiles')
-else:
-    print(f'Player 2 wins with only {player2_score} missiles used vs. Player 1 using {player1_score} missiles')
+players = input('Would you like to play solo (1) or with two players (2) (1/2): ')
+while True:
+    if players == '1':
+        print('You are playing solo. The computer will randomly place the ships for you to guess.\n')
+        game1 = BattleshipGame(10, 1)
+        game1.print_ships_info()
+        game1.random_ships()
+        game1.battlefield_grid()
+        score = game1.check_hit()
+        print(f'Missiles Used/End Score: {score}\n')
+        break
+    elif players == '2':
+        game1 = BattleshipGame(10)
+        game1.print_ships_info()
+        game1.print_grid()
+        game1.get_user_input()
+        player2_score = game1.check_hit()
+        print(f'Player 2 Missiles Used: {player2_score}\n')
+        print('Player 2, it is now your turn to input your ships.\n')
+        game2 = BattleshipGame(10)
+        game2.print_ships_info()
+        game2.print_grid()
+        game2.get_user_input()
+        player1_score = game2.check_hit()
+        if player1_score < player2_score:
+            print(f'Player 1 wins with only {player1_score} missiles used vs. Player 2 using {player2_score} missiles')
+        else:
+            print(f'Player 2 wins with only {player2_score} missiles used vs. Player 1 using {player1_score} missiles')
+        break
+    else:
+        print('Invalid input. Please enter 1 or 2.\n')
+        players = input('Would you like to play solo (1) or with two players (2) (1/2): ')
+        continue
