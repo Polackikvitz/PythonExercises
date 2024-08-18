@@ -6,31 +6,25 @@ class BattleshipGame:
         self.battlefield = [[' ' for _ in range(size)] for _ in range(size)]
         self.players = players
 
-        self.ship_types = {
-            1: {'class': 'Carrier', 'size': 5, 'coord': []},
-            2: {'class': 'Battleship', 'size': 4, 'coord': []},
-            3: {'class': 'Destroyer', 'size': 3, 'coord': []},
-            4: {'class': 'Submarine', 'size': 3, 'coord': []},
-            5: {'class': 'Patrol Boat', 'size': 2, 'coord': []}
-        }
-
-    def print_ships_info(self):
-        ships_info = [
-            {"No.": 1, "Class of ship": "Carrier", "Size": 5},
-            {"No.": 2, "Class of ship": "Battleship", "Size": 4},
-            {"No.": 3, "Class of ship": "Destroyer", "Size": 3},
-            {"No.": 4, "Class of ship": "Submarine", "Size": 3},
-            {"No.": 5, "Class of ship": "Patrol Boat", "Size": 2},
+        self.ship_types = [
+            Ship('Carrier', 5),
+            Ship('Battleship', 4),
+            Ship('Destroyer', 3),
+            Ship('Submarine', 3),
+            Ship('Patrol Boat', 2)
         ]
 
+    def print_all_ship_types_info(self):
         # Print the header
         header = f"{'No.':<5} {'Class of ship':<20} {'Size':<5}"
         print(header)
         print("=" * len(header))
 
         # Print each ship's information
-        for ship in ships_info:
-            print(f"{ship['No.']:<5} {ship['Class of ship']:<20} {ship['Size']:<5}")
+        shipCount = 0
+        for ship in self.ship_types:
+            shipCount += 1
+            print(f"{shipCount:<5} {ship.ShipClass:<20} {ship.Size:<5}")
         print()
 
     def print_grid(self):
@@ -57,7 +51,7 @@ class BattleshipGame:
             print('+' + '-' * 4, end='')
         print('+')
 
-    def battlefield_grid(self):
+    def print_battlefield_grid(self):
         """Prints the battlefield grid with the headers and the grid cells
         This is the grid that the player will see with their hits and misses"""
         print('                 🛟 BATTLESHIP GRID 🛟')
@@ -139,10 +133,10 @@ class BattleshipGame:
 
     def get_user_input(self):
         """Gets user input for ship placement"""
-        for ship_no, ship_info in self.ship_types.items():
-            name = ship_info['class']
-            length = ship_info['size']
-            dict_coordinates = ship_info['coord']
+        for ship_info in self.ship_types:
+            name = ship_info.ShipClass
+            length = ship_info.Size
+            dict_coordinates = ship_info.Coord
             # Produces an infinite loop until an exception occurs or a break. Allows for reattempts at placing ships
             while True:
                 print(f'Placing {name} (size {length}):')
@@ -201,7 +195,7 @@ class BattleshipGame:
             if self.grid[x][y] == ' ':
                 self.grid[x][y] = 'X'
                 self.battlefield[x][y] = 'X'
-                self.battlefield_grid()
+                self.print_battlefield_grid()
                 print('Miss! Try again!')
                 continue
             elif self.grid[x][y] == 'X':
@@ -212,18 +206,18 @@ class BattleshipGame:
                 continue
 
             # Check if missile hit or miss via iterating through ship coordinates
-            for ship_id, ship_info in self.ship_types.items():
-                for coord in ship_info['coord']:
+            for ship in self.ships:
+                for coord in ship.items:
                     if coord_missile == coord and self.grid[x][y] != '☠':
                         missile_hit += 1
                         self.battlefield[x][y] = '☠'
                         self.grid[x][y] = '☠'
-                        self.battlefield_grid()
-                        print(f'Ship {ship_info["class"]}, size: {ship_info["size"]}, has been hit! ')
+                        self.print_battlefield_grid()
+                        print(f'Ship {ship.ShipClass}, size: {ship.Size}, has been hit! ')
 
-                        ship_info['coord'].remove(coord)
-                        if len(ship_info['coord']) == 0:
-                            print(f'Ship {ship_info["class"]} has been destroyed! ')
+                        ship.Coord.remove(coord)
+                        if len(ship.Coord) == 0:
+                            print(f'Ship {ship.ShipClass} has been destroyed! ')
 
                         break
 
@@ -233,10 +227,10 @@ class BattleshipGame:
     def random_ships(self):
         """Randomly places ships on the grid"""
         from random import randint, choice
-        for ship_no, ship_info in self.ship_types.items():
-            name = ship_info['class']
-            length = ship_info['size']
-            dict_coordinates = ship_info['coord']
+        for ship_info in self.ship_types:
+            name = ship_info.ShipClass
+            length = ship_info.Size
+            dict_coordinates = ship_info.Coord
             while True:
                 orientation = choice(['horizontal', 'vertical'])
                 if orientation == 'horizontal':
@@ -283,9 +277,12 @@ class BattleshipGame:
 
         return True
 
-
-
-
+class Ship:
+    def __init__(self, shipClass, size, coord=[]):
+        self.ShipClass = shipClass
+        self.Size = size
+        self.Coord = coord
+        
 
 print('This is either a single player or double player battleship game. If you are playing solo, the computer will randomly place the ships for you to guess.\n')
 print('If you are playing with two players, Player 1 will input the location of the ships, and Player 2 will guess the location of the ships.\n'
@@ -295,23 +292,23 @@ players = input('Would you like to play solo (1) or with two players (2) (1/2): 
 while True:
     if players == '1':
         print('You are playing solo. The computer will randomly place the ships for you to guess.\n')
-        game1 = BattleshipGame(10, 1)
-        game1.print_ships_info()
+        game1 = BattleshipGame(players= 1)
+        game1.print_all_ship_types_info()
         game1.random_ships()
-        game1.battlefield_grid()
+        game1.print_battlefield_grid()
         score = game1.check_hit()
         print(f'Missiles Used/End Score: {score}\n')
         break
     elif players == '2':
         game1 = BattleshipGame(10)
-        game1.print_ships_info()
+        game1.print_all_ship_types_info()
         game1.print_grid()
         game1.get_user_input()
         player2_score = game1.check_hit()
         print(f'Player 2 Missiles Used: {player2_score}\n')
         print('Player 2, it is now your turn to input your ships.\n')
-        game2 = BattleshipGame(10)
-        game2.print_ships_info()
+        game2 = BattleshipGame(players= 2)
+        game2.print_all_ship_types_info()
         game2.print_grid()
         game2.get_user_input()
         player1_score = game2.check_hit()
